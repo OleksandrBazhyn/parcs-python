@@ -60,15 +60,16 @@ class Solver:
 
     @staticmethod
     @expose
-    def myreduce(mapped, N):
-        print("🟡 Reduce phase started")
+    def myreduce(self, parts, N):
         result = [0] * N
 
-        for part in mapped:
-            d = part.value
-            result[d["offset"]: d["offset"] + len(d["data"])] = d["data"]
+        for part in parts:
+            offset = part["offset"]
+            data = part["data"]
 
-        print("🟡 Reduce phase finished")
+            for i in range(len(data)):
+                result[offset + i] = data[i]
+
         return result
 
     def read_input(self):
