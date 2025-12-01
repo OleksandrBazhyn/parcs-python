@@ -1,11 +1,15 @@
 import Pyro4
+import socket
 from solver import Solver
 
-Pyro4.Daemon.serveSimple(
-    {
-        Solver: "parcs.worker"
-    },
-    host="0.0.0.0",
-    port=50000,
-    ns=True
-)
+host = socket.gethostname()   # ✅ worker1 / worker2 / worker3 / worker4
+
+daemon = Pyro4.Daemon(host=host)
+ns = Pyro4.locateNS(host="master")
+
+uri = daemon.register(Solver)
+ns.register("parcs.worker." + host, uri)
+
+print(f"✅ Worker registered as parcs.worker.{host}")
+
+daemon.requestLoop()
