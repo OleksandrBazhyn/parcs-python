@@ -1,15 +1,13 @@
 import Pyro4
 from solver import Solver
 
-# Підключення до Name Server
-ns = Pyro4.locateNS()
+ns = Pyro4.locateNS(host="master")
 
-# ✅ 4 ВОРКЕРИ
 workers = [
-    Pyro4.Proxy(ns.lookup("parcs.worker")),
-    Pyro4.Proxy(ns.lookup("parcs.worker")),
-    Pyro4.Proxy(ns.lookup("parcs.worker")),
-    Pyro4.Proxy(ns.lookup("parcs.worker"))
+    Pyro4.Proxy(ns.lookup("parcs.worker.worker1")),
+    Pyro4.Proxy(ns.lookup("parcs.worker.worker2")),
+    Pyro4.Proxy(ns.lookup("parcs.worker.worker3")),
+    Pyro4.Proxy(ns.lookup("parcs.worker.worker4")),
 ]
 
 solver = Solver(
