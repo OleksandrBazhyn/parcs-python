@@ -3,12 +3,11 @@ from solver import Solver
 
 ns = Pyro4.locateNS(host="master")
 
-workers = [
-    Pyro4.Proxy(ns.lookup("parcs.worker.worker1")),
-    Pyro4.Proxy(ns.lookup("parcs.worker.worker2")),
-    Pyro4.Proxy(ns.lookup("parcs.worker.worker3")),
-    Pyro4.Proxy(ns.lookup("parcs.worker.worker4")),
-]
+# ✅ Автоматично беремо ВСІ воркери
+worker_names = ns.list(prefix="parcs.worker")
+workers = [Pyro4.Proxy(uri) for uri in worker_names.values()]
+
+print("Workers found:", list(worker_names.keys()))
 
 solver = Solver(
     workers=workers,
