@@ -14,8 +14,8 @@ workers = [
 
 solver = Solver(
     workers=workers,
-    input_file_name="input.txt",
-    output_file_name="output.txt"
+    input_file_name="mt_lab/input.txt",
+    output_file_name="mt_lab/output.txt"
 )
 
 solver.solve()
