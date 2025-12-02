@@ -58,8 +58,6 @@ class Solver:
 
         return {"offset": offset, "data": data}
 
-    @staticmethod
-    @expose
     def myreduce(self, parts, N):
         result = [0] * N
 
