@@ -16,11 +16,11 @@ class Solver:
 
         N, seed = self.read_input()
 
-        # ❌ Забороняємо локальний режим для лабораторної
+        # Забороняємо локальний режим для лабораторної
         if not self.workers:
-            raise RuntimeError("❌ Workers не підключені! PARCS не працює!")
+            raise RuntimeError("Workers не підключені! PARCS не працює!")
 
-        # ✅ PARCS РОЗБИТТЯ
+        # PARCS РОЗБИТТЯ
         k = len(self.workers)
         chunk = N // k
         rem = N % k
@@ -31,7 +31,7 @@ class Solver:
         for i, w in enumerate(self.workers):
             size = chunk + (1 if i < rem else 0)
 
-            print(f"➡️ Send task to worker {i+1} | size={size} | offset={offset}")
+            print(f"Send task to worker {i+1} | size={size} | offset={offset}")
 
             mapped.append(
                 w.mymap(seed + i * 1000, size, offset)
@@ -39,19 +39,19 @@ class Solver:
 
             offset += size
 
-        # ✅ ЗБІР РЕЗУЛЬТАТІВ
+        # ЗБІР РЕЗУЛЬТАТІВ
         result = self.myreduce(mapped, N)
 
         self.write_output(result)
 
-        print("✅ PARCS генерація завершена")
-        print("⏱ Time:", time.time() - start)
+        print("PARCS генерація завершена")
+        print("Time:", time.time() - start)
 
     @staticmethod
     @expose
     def mymap(seed, size, offset):
         hostname = socket.gethostname()
-        print(f"🟢 Worker {hostname} | seed={seed} | size={size} | offset={offset}")
+        print(f"Worker {hostname} | seed={seed} | size={size} | offset={offset}")
 
         mt = MT19937(seed)
         data = [mt.rand_uint32() for _ in range(size)]

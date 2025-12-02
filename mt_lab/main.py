@@ -3,7 +3,7 @@ from solver import Solver
 
 ns = Pyro4.locateNS(host="master")
 
-# ✅ Автоматично беремо ВСІ воркери
+# Автоматично беремо ВСІ воркери
 worker_names = ns.list(prefix="parcs.worker")
 workers = [Pyro4.Proxy(uri) for uri in worker_names.values()]
 
