@@ -1,4 +1,3 @@
-# mt19937.py
 W, N, M, R = 32, 624, 397, 31
 A = 0x9908B0DF
 U, D = 11, 0xFFFFFFFF
