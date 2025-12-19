@@ -1,80 +1,118 @@
 from Pyro4 import expose
-from mt19937 import MT19937
-import socket
-import time
 
+W, N, M, R = 32, 624, 397, 31
+A = 0x9908B0DF
+U, D = 11, 0xFFFFFFFF
+S, B = 7, 0x9D2C5680
+T, C = 15, 0xEFC60000
+L = 18
+F = 1812433253
+
+LOWER_MASK = (1 << R) - 1
+UPPER_MASK = 0xFFFFFFFF ^ LOWER_MASK
+
+
+class MT19937:
+    def __init__(self, seed):
+        self.mt = [0] * N
+        self.index = N
+        self.seed(seed)
+
+    def seed(self, seed):
+        self.mt[0] = seed & 0xFFFFFFFF
+        for i in range(1, N):
+            self.mt[i] = (
+                F * (self.mt[i - 1] ^ (self.mt[i - 1] >> 30)) + i
+            ) & 0xFFFFFFFF
+
+    def twist(self):
+        for i in range(N):
+            x = (self.mt[i] & UPPER_MASK) + (self.mt[(i + 1) % N] & LOWER_MASK)
+            xA = x >> 1
+            if x & 1:
+                xA ^= A
+            self.mt[i] = self.mt[(i + M) % N] ^ xA
+        self.index = 0
+
+    def rand_uint32(self):
+        if self.index >= N:
+            self.twist()
+
+        y = self.mt[self.index]
+        self.index += 1
+
+        y ^= (y >> U)
+        y ^= (y << S) & B
+        y ^= (y << T) & C
+        y ^= (y >> L)
+
+        return y & 0xFFFFFFFF
 
 class Solver:
-    def __init__(self, workers, input_file_name, output_file_name):
+    def __init__(self, workers=None, input_file_name=None, output_file_name=None):
         self.workers = workers
         self.input_file_name = input_file_name
         self.output_file_name = output_file_name
+        print("Solver initialized")
 
     def solve(self):
-        start = time.time()
-        print("Workers count:", len(self.workers))
+        print("Job started")
+        print("Workers:", len(self.workers))
 
-        N, seed = self.read_input()
+        total_n, seed = self.read_input()
 
-        # Забороняємо локальний режим для лабораторної
-        if not self.workers:
-            raise RuntimeError("Workers не підключені! PARCS не працює!")
-
-        # PARCS РОЗБИТТЯ
         k = len(self.workers)
-        chunk = N // k
-        rem = N % k
+        if k == 0:
+            raise RuntimeError("No workers available")
+
+        base = total_n // k
+        rest = total_n % k
 
         mapped = []
         offset = 0
 
         for i, w in enumerate(self.workers):
-            size = chunk + (1 if i < rem else 0)
-
-            print(f"Send task to worker {i+1} | size={size} | offset={offset}")
-
+            size = base + (1 if i < rest else 0)
             mapped.append(
-                w.mymap(seed + i * 1000, size, offset)
+                w.mymap(seed, size, offset)
             )
-
             offset += size
 
-        # ЗБІР РЕЗУЛЬТАТІВ
-        result = self.myreduce(mapped, N)
-
-        self.write_output(result)
-
-        print("PARCS генерація завершена")
-        print("Time:", time.time() - start)
+        self.write_output(mapped)
+        print("Job finished")
 
     @staticmethod
     @expose
     def mymap(seed, size, offset):
-        hostname = socket.gethostname()
-        print(f"Worker {hostname} | seed={seed} | size={size} | offset={offset}")
-
         mt = MT19937(seed)
+
+        for _ in range(offset):
+            mt.rand_uint32()
+
         data = [mt.rand_uint32() for _ in range(size)]
 
-        return {"offset": offset, "data": data}
-
-    def myreduce(self, parts, N):
-        result = [0] * N
-
-        for part in parts:
-            offset = part["offset"]
-            data = part["data"]
-
-            for i in range(len(data)):
-                result[offset + i] = data[i]
-
-        return result
+        return {
+            "offset": offset,
+            "data": data
+        }
 
     def read_input(self):
         with open(self.input_file_name) as f:
-            lines = f.read().split()
-        return int(lines[0]), int(lines[1])
+            vals = list(map(int, f.read().split()))
+        return vals[0], vals[1]
 
-    def write_output(self, data):
+    def write_output(self, mapped):
+        total = sum(len(p.value["data"]) for p in mapped)
+        result = [0] * total
+
+        for part in mapped:
+            block = part.value
+            off = block["offset"]
+            data = block["data"]
+            result[off:off + len(data)] = data
+
         with open(self.output_file_name, "w") as f:
-            f.write("\n".join(map(str, data)))
+            for x in result:
+                f.write(str(x) + "\n")
+
+        print("Output written")
